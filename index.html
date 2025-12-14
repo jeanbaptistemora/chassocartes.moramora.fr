@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Card Hunt Gallery</title>
+  <!-- Import Convex Client -->
+  <script src="https://unpkg.com/convex@1.17.4/dist/browser.bundle.js"></script>
+</head>
+<body>
+  <div id="gallery">Loading...</div>
+
+  <script>
+    const convex_client = new convex.ConvexClient("https://vibrant-bee-793.convex.cloud");
+
+    async function loadGallery() {
+      // Call the publicList query
+      const cards = await convex_client.query("cards:publicList");
+      
+      const container = document.getElementById("gallery");
+      container.innerHTML = ""; // Clear loading
+
+      cards.forEach(card => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <h3>${card.title} <small>(${card.status})</small></h3>
+          ${card.image_url ? `<img src="${card.image_url}" width="200" />` : ""}
+          <p>${card.description}</p>
+          ${card.status === 'FOUND' ? `<p><strong>Found by:</strong> ${card.finder_name}</p>` : ""}
+          <hr/>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    loadGallery();
+  </script>
+</body>
+</html>
