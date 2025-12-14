@@ -1,37 +1,217 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Card Hunt Gallery</title>
-  <!-- Import Convex Client -->
-  <script src="https://unpkg.com/convex@1.17.4/dist/browser.bundle.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Hunt Gallery</title>
+    
+    <!-- Import Convex Client -->
+    <script src="https://unpkg.com/convex@1.17.4/dist/browser.bundle.js"></script>
+    
+    <!-- Import Bulma CSS Framework -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    
+    <!-- Import Google Fonts (Inter for a modern look) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Import FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Custom Styles for Refinement */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa; /* Very light cool gray */
+            min-height: 100vh;
+        }
+
+        .hero-body {
+            padding-bottom: 2rem;
+        }
+
+        .card {
+            border-radius: 12px;
+            border: 1px solid #eaeaea;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-image img {
+            object-fit: cover;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+
+        .card-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-body {
+            flex-grow: 1;
+        }
+
+        .finder-badge {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Loading Spinner */
+        .loader-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        .lds-dual-ring {
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+        }
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #3273dc;
+            border-color: #3273dc transparent #3273dc transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+        @keyframes lds-dual-ring {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-  <div id="gallery">Loading...</div>
 
-  <script>
-    const convex_client = new convex.ConvexClient("https://vibrant-bee-793.convex.cloud");
+    <!-- Hero Section -->
+    <section class="hero is-white">
+        <div class="hero-body">
+            <div class="container has-text-centered">
+                <p class="title is-2 has-text-grey-darker">
+                    <i class="fa-solid fa-map-location-dot has-text-primary mr-2"></i> Card Hunt
+                </p>
+                <p class="subtitle is-5 has-text-grey">
+                    Explore the gallery of discovered treasures
+                </p>
+            </div>
+        </div>
+    </section>
 
-    async function loadGallery() {
-      // Call the publicList query
-      const cards = await convex_client.query("cards:publicList");
-      
-      const container = document.getElementById("gallery");
-      container.innerHTML = ""; // Clear loading
+    <!-- Main Gallery Container -->
+    <section class="section">
+        <div class="container">
+            <div id="gallery" class="columns is-multiline">
+                <!-- Loading State -->
+                <div class="column is-12">
+                    <div class="loader-wrapper">
+                        <div class="lds-dual-ring"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-      cards.forEach(card => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <h3>${card.title} <small>(${card.status})</small></h3>
-          ${card.image_url ? `<img src="${card.image_url}" width="200" />` : ""}
-          <p>${card.description}</p>
-          ${card.status === 'FOUND' ? `<p><strong>Found by:</strong> ${card.finder_name}</p>` : ""}
-          <hr/>
-        `;
-        container.appendChild(div);
-      });
-    }
+    <script>
+        const convex_client = new convex.ConvexClient("https://vibrant-bee-793.convex.cloud");
 
-    loadGallery();
-  </script>
+        async function loadGallery() {
+            try {
+                // Call the publicList query
+                const cards = await convex_client.query("cards:publicList");
+                
+                const container = document.getElementById("gallery");
+                container.innerHTML = ""; // Clear loading
+
+                if (cards.length === 0) {
+                    container.innerHTML = `
+                        <div class="column is-12 has-text-centered">
+                            <p class="is-size-4 has-text-grey-light">No cards found yet.</p>
+                        </div>`;
+                    return;
+                }
+
+                cards.forEach(card => {
+                    // Determine Status Color
+                    let statusColor = 'is-info'; // Default
+                    let icon = 'fa-question-circle';
+                    
+                    if (card.status === 'FOUND') {
+                        statusColor = 'is-success';
+                        icon = 'fa-check-circle';
+                    } else if (card.status === 'HIDDEN') {
+                        statusColor = 'is-warning';
+                        icon = 'fa-eye-slash';
+                    }
+
+                    // Create Column wrapper for Grid layout
+                    const col = document.createElement("div");
+                    col.className = "column is-one-third-desktop is-half-tablet";
+
+                    // Card HTML Construction
+                    col.innerHTML = `
+                        <div class="card">
+                            ${card.image_url ? `
+                                <div class="card-image">
+                                    <figure class="image is-4by3">
+                                        <img src="${card.image_url}" alt="${card.title}">
+                                    </figure>
+                                </div>
+                            ` : ''}
+                            <div class="card-content">
+                                <div class="content-body">
+                                    <div class="is-flex is-justify-content-space-between is-align-items-start mb-3">
+                                        <p class="title is-4 mb-0">${card.title}</p>
+                                        <span class="tag ${statusColor} is-light">
+                                            <i class="fa-solid ${icon} mr-1"></i> ${card.status}
+                                        </span>
+                                    </div>
+                                    <p class="subtitle is-6 has-text-grey-dark">
+                                        ${card.description}
+                                    </p>
+                                </div>
+                                
+                                ${card.status === 'FOUND' ? `
+                                    <div class="finder-badge is-flex is-align-items-center">
+                                        <div class="icon has-text-success mr-2">
+                                            <i class="fa-solid fa-trophy"></i>
+                                        </div>
+                                        <div>
+                                            <span class="is-size-7 is-uppercase has-text-grey-light">Found by</span><br>
+                                            <strong>${card.finder_name}</strong>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch (error) {
+                console.error("Error loading gallery:", error);
+                document.getElementById("gallery").innerHTML = `
+                    <div class="notification is-danger">
+                        Failed to load gallery data.
+                    </div>`;
+            }
+        }
+
+        loadGallery();
+    </script>
 </body>
 </html>
