@@ -199,6 +199,16 @@
                                             <strong>${card.finder_name}</strong>
                                         </div>
                                     </div>
+                                    ${card.finder_note !== '' ? `
+                                        <div class=" is-flex is-align-items-center">
+                                            <div class="icon has-text-success mr-2">
+                                            </div>
+                                            <div>
+                                                <span class="is-size-7 is-uppercase has-text-grey-light">Finder's note</span><br>
+                                                <strong>${card.finder_note}</strong>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                 ` : ''}
                             </div>
                         </div>
