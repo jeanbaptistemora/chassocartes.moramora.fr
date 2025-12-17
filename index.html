@@ -5,223 +5,364 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Hunt Gallery</title>
     
-    <!-- Import Convex Client -->
+    <!-- Convex Client -->
     <script src="https://unpkg.com/convex@1.17.4/dist/browser.bundle.js"></script>
-    
-    <!-- Import Bulma CSS Framework -->
+
+    <!-- Bulma CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    
-    <!-- Import Google Fonts (Inter for a modern look) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Import FontAwesome for Icons -->
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Lato:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* Custom Styles for Refinement */
+        :root {
+            --paper-color: #fdfbf7;
+            --paper-shadow: 0 10px 20px rgba(0,0,0,0.08), 0 6px 6px rgba(0,0,0,0.1);
+            --seal-found: #d4af37; /* Gold */
+            --seal-hidden: #c0392b; /* Red */
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f5f7fa; /* Very light cool gray */
+            font-family: 'Lato', sans-serif;
+            background-color: #2c3e50;
+            background-image: radial-gradient(#34495e 1px, transparent 1px);
+            background-size: 20px 20px;
             min-height: 100vh;
         }
 
-        .hero-body {
-            padding-bottom: 2rem;
-        }
+        /* --- Typography --- */
+        h1.title { font-family: 'Playfair Display', serif; color: white; letter-spacing: 1px; }
+        .handwritten { font-family: 'Indie Flower', cursive; color: #555; }
+        .elegant-title { font-family: 'Playfair Display', serif; font-weight: 700; color: #2c3e50; }
 
-        .card {
-            border-radius: 12px;
-            border: 1px solid #eaeaea;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* --- Envelope Card --- */
+        .envelope-container {
+            position: relative;
+            background-color: var(--paper-color);
+            border-radius: 5px;
+            box-shadow: var(--paper-shadow);
+            padding: 0;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            cursor: default;
             height: 100%;
             display: flex;
             flex-direction: column;
         }
 
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        .envelope-container.is-clickable:hover {
+            cursor: pointer;
+            transform: translateY(-8px) rotate(1deg);
+            box-shadow: 0 14px 28px rgba(0,0,0,0.15), 0 10px 10px rgba(0,0,0,0.12);
         }
 
-        .card-image img {
-            object-fit: cover;
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
+        .envelope-flap {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 0;
+            border-left: 50% solid transparent;
+            border-right: 50% solid transparent;
+            border-top: 100px solid #f4f1ea;
+            z-index: 1;
+            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
         }
 
-        .card-content {
+        .wax-seal {
+            position: absolute;
+            top: 60px; left: 50%; transform: translateX(-50%);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 2px 5px rgba(255,255,255,0.3);
+            border: 2px dashed rgba(255,255,255,0.4);
+            z-index: 2;
+        }
+        .seal-found { background-color: var(--seal-found); }
+        .seal-hidden { background-color: var(--seal-hidden); }
+
+        .envelope-body {
+            padding: 120px 2rem 2rem 2rem;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+            background: repeating-linear-gradient(0deg, transparent, transparent 29px, #e5e5f7 30px);
         }
 
-        .content-body {
-            flex-grow: 1;
+        .postage-stamp {
+            position: absolute; top: 20px; right: 20px;
+            width: 60px; height: 70px;
+            border: 3px dotted #dcdcdc;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0.5; transform: rotate(5deg);
         }
 
-        .finder-badge {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #f0f0f0;
-            font-size: 0.9rem;
-            color: #666;
+        /* Social Link Styling */
+        .finder-social-link {
+            color: #3273dc;
+            margin-left: 8px;
+            transition: color 0.2s;
+            position: relative;
+            margin-top: 2em;
+            z-index: 5; /* Ensure clickable above other elements */
+        }
+        .finder-social-link:hover { color: #000; }
+
+        /* --- Lightbox Modal (Scrapbook Style) --- */
+        .modal-content {
+            background: transparent;
+            width: 90%;
+            max-width: 600px;
+            overflow: visible;
+        }
+
+        .scrapbook-page {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 4px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transform: rotate(-1deg);
+            position: relative;
+        }
+
+        /* Tape effect on image */
+        .photo-container {
+            position: relative;
+            background: #000;
+            padding: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .photo-container img { display: block; width: 100%; height: auto; }
+
+        .washi-tape {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 120px; height: 30px;
+            background-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transform: translateX(-50%) rotate(-2deg);
+            z-index: 10;
+        }
+
+        .details-section { text-align: left; color: #333; }
+        .details-divider { border-top: 2px dashed #ddd; margin: 1.5rem 0; }
+
+        .finder-meta {
+            display: flex; justify-content: space-between; align-items: flex-start;
         }
 
         /* Loading Spinner */
-        .loader-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
+        .loader-wrapper { display: flex; justify-content: center; height: 200px; align-items: center;}
+        .lds-ripple { display: inline-block; position: relative; width: 80px; height: 80px; }
+        .lds-ripple div { position: absolute; border: 4px solid #fff; opacity: 1; border-radius: 50%; animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite; }
+        .lds-ripple div:nth-child(2) { animation-delay: -0.5s; }
+        @keyframes lds-ripple {
+            0% { top: 36px; left: 36px; width: 0; height: 0; opacity: 0; }
+            4.9% { top: 36px; left: 36px; width: 0; height: 0; opacity: 0; }
+            5% { top: 36px; left: 36px; width: 0; height: 0; opacity: 1; }
+            100% { top: 0px; left: 0px; width: 72px; height: 72px; opacity: 0; }
         }
-        .lds-dual-ring {
-            display: inline-block;
-            width: 80px;
-            height: 80px;
-        }
-        .lds-dual-ring:after {
-            content: " ";
-            display: block;
-            width: 64px;
-            height: 64px;
-            margin: 8px;
-            border-radius: 50%;
-            border: 6px solid #3273dc;
-            border-color: #3273dc transparent #3273dc transparent;
-            animation: lds-dual-ring 1.2s linear infinite;
-        }
-        @keyframes lds-dual-ring {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+
     </style>
 </head>
 <body>
 
-    <!-- Hero Section -->
-    <section class="hero is-white">
-        <div class="hero-body">
-            <div class="container has-text-centered">
-                <p class="title is-2 has-text-grey-darker">
-                    <i class="fa-solid fa-map-location-dot has-text-primary mr-2"></i> Card Hunt
-                </p>
-                <p class="subtitle is-5 has-text-grey">
-                    Explore the gallery of discovered treasures
-                </p>
-            </div>
+    <!-- Header -->
+    <section class="section">
+        <div class="container has-text-centered">
+            <h1 class="title is-1 mb-2">
+                <i class="fa-solid fa-compass has-text-warning mr-3"></i>The Card Hunt
+            </h1>
+            <p class="subtitle has-text-white-ter is-6 mt-2">
+                Unseal the envelopes to reveal the discovered treasures.
+            </p>
         </div>
     </section>
 
-    <!-- Main Gallery Container -->
-    <section class="section">
+    <!-- Gallery Grid -->
+    <section class="section" style="padding-top: 0;">
         <div class="container">
             <div id="gallery" class="columns is-multiline">
-                <!-- Loading State -->
+                <!-- Loading... -->
                 <div class="column is-12">
                     <div class="loader-wrapper">
-                        <div class="lds-dual-ring"></div>
+                        <div class="lds-ripple"><div></div><div></div></div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Lightbox Modal -->
+    <div id="image-modal" class="modal">
+        <div class="modal-background" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <div class="scrapbook-page">
+
+                <!-- The Image -->
+                <div class="photo-container">
+                    <div class="washi-tape"></div>
+                    <img id="modal-img" src="" alt="Found Card">
+                </div>
+
+                <!-- The Details -->
+                <div class="details-section">
+                    <h2 id="modal-title" class="title is-3 elegant-title mb-2"></h2>
+                    <p id="modal-desc" class="subtitle is-6 is-italic has-text-grey mt-3"></p>
+
+                    <div class="details-divider"></div>
+
+                    <div class="finder-meta">
+                        <div>
+                            <p class="is-uppercase is-size-7 has-text-grey-light mb-1">Discovered By</p>
+                            <p class="title is-5">
+                                <span id="modal-finder"></span>
+                            </p>
+                        </div>
+                        <div class="has-text-right">
+                            <p class="is-uppercase is-size-7 has-text-grey-light mb-1">Date Found</p>
+                            <p id="modal-date" class="is-size-6 has-text-weight-bold"></p>
+                        </div>
+                    </div>
+
+                    <div id="modal-note-container" class="mt-4 box has-background-warning-light">
+                        <p class="handwritten is-size-4">
+                            "<span id="modal-note"></span>"
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close" onclick="closeModal()"></button>
+        </div>
+    </div>
+
     <script>
         const convex_client = new convex.ConvexClient("https://vibrant-bee-793.convex.cloud");
 
+        // Global store for cards to avoid passing complex strings in HTML
+        let galleryData = [];
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Unknown Date';
+            return new Date(timestamp).toLocaleDateString("en-US", {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
         async function loadGallery() {
             try {
-                // Call the publicList query
                 const cards = await convex_client.query("cards:publicList");
-                
+                galleryData = cards; // Store in global variable
+
                 const container = document.getElementById("gallery");
-                container.innerHTML = ""; // Clear loading
+                container.innerHTML = "";
 
                 if (cards.length === 0) {
-                    container.innerHTML = `
-                        <div class="column is-12 has-text-centered">
-                            <p class="is-size-4 has-text-grey-light">No cards found yet.</p>
-                        </div>`;
+                    container.innerHTML = `<div class="column is-12 has-text-centered has-text-white">No envelopes found.</div>`;
                     return;
                 }
 
-                cards.forEach(card => {
-                    // Determine Status Color
-                    let statusColor = 'is-info'; // Default
-                    let icon = 'fa-question-circle';
-                    
-                    if (card.status === 'FOUND') {
-                        statusColor = 'is-success';
-                        icon = 'fa-check-circle';
-                    } else if (card.status === 'HIDDEN') {
-                        statusColor = 'is-warning';
-                        icon = 'fa-eye-slash';
-                    }
+                cards.forEach((card, index) => {
+                    const isFound = card.status === 'FOUND';
 
-                    // Create Column wrapper for Grid layout
+                    // Create wrapper
                     const col = document.createElement("div");
                     col.className = "column is-one-third-desktop is-half-tablet";
 
-                    // Card HTML Construction
                     col.innerHTML = `
-                        <div class="card">
-                            ${card.status === 'FOUND' ? `
-                                ${card.image_url ? `
-                                    <div class="card-image">
-                                        <figure class="image is-4by3">
-                                            <img src="${card.image_url}" alt="${card.title}">
-                                        </figure>
-                                    </div>
-                                ` : ''}
-                            ` : ''}
-                            <div class="card-content">
-                                <div class="content-body">
-                                    <div class="is-flex is-justify-content-space-between is-align-items-start mb-3">
-                                        <p class="title is-4 mb-0">${card.title}</p>
-                                        <span class="tag ${statusColor} is-light">
-                                            <i class="fa-solid ${icon} mr-1"></i>
-                                                ${card.status === 'FOUND' ? "FOUND" : "NOT FOUND"}
-                                        </span>
-                                    </div>
-                                    <p class="subtitle is-6 has-text-grey-dark">
-                                        ${card.description}
+                        <div class="envelope-container ${isFound ? 'is-clickable' : ''}"
+                             onclick="${isFound ? `openModal(${index})` : ''}">
+
+                            <div class="envelope-flap"></div>
+
+                            <div class="wax-seal ${isFound ? 'seal-found' : 'seal-hidden'}">
+                                <i class="fa-solid ${isFound ? 'fa-trophy' : 'fa-eye-slash'}"></i>
+                            </div>
+
+                            <div class="postage-stamp">
+                                <i class="fa-solid fa-earth-americas has-text-grey-light"></i>
+                            </div>
+
+                            <div class="envelope-body">
+                                <div>
+                                    <h3 class="elegant-title is-size-4 mb-3">${card.title}</h3>
+                                    <p class="is-size-6 has-text-grey-dark mt-2" style="font-style: italic;">
+                                        "${card.description}"
                                     </p>
                                 </div>
-                                
-                                ${card.status === 'FOUND' ? `
-                                    <div class="finder-badge is-flex is-align-items-center">
-                                        <div class="icon has-text-success mr-2">
-                                            <i class="fa-solid fa-trophy"></i>
+
+                                <div class="finder-social-link">
+                                    <a href="${card.social_link}" target="_blank" class="" onclick="event.stopPropagation()">
+                                        <i class="fa-solid fa-link"></i>
+                                    </a>
+                                </div>
+
+                                <div class="mt-5">
+                                    ${isFound ? `
+                                        <div class="is-flex is-justify-content-center is-align-items-center">
+                                            <span class="handwritten is-size-5">Found by
+                                                <strong class="has-text-black">${card.finder_name}</strong>
+                                            </span>
                                         </div>
-                                        <div>
-                                            <span class="is-size-7 is-uppercase has-text-grey-light">Found by</span><br>
-                                            <strong>${card.finder_name}</strong>
+                                        <p class="is-size-7 has-text-grey-light mt-1">
+                                            (Click to view details)
+                                        </p>
+                                    ` : `
+                                        <div class="mt-4">
+                                            <span class="tag is-light is-warning">NOT FOUND</span>
                                         </div>
-                                    </div>
-                                    ${card.finder_note !== '' ? `
-                                        <div class=" is-flex is-align-items-center">
-                                            <div class="icon has-text-success mr-2">
-                                            </div>
-                                            <div>
-                                                <span class="is-size-7 is-uppercase has-text-grey-light">Finder's note</span><br>
-                                                <strong>${card.finder_note}</strong>
-                                            </div>
-                                        </div>
-                                    ` : ''}
-                                ` : ''}
+                                    `}
+                                </div>
                             </div>
                         </div>
                     `;
                     container.appendChild(col);
                 });
             } catch (error) {
-                console.error("Error loading gallery:", error);
-                document.getElementById("gallery").innerHTML = `
-                    <div class="notification is-danger">
-                        Failed to load gallery data.
-                    </div>`;
+                console.error("Error", error);
+                document.getElementById("gallery").innerHTML = `<div class="notification is-danger">Error loading data.</div>`;
             }
+        }
+
+        // --- Modal Logic ---
+
+        function openModal(index) {
+            const card = galleryData[index];
+            if (!card) return;
+
+            const modal = document.getElementById('image-modal');
+
+            // Populate Fields
+            document.getElementById('modal-img').src = card.image_url || '';
+            document.getElementById('modal-title').innerText = card.title;
+            document.getElementById('modal-desc').innerText = card.description;
+            document.getElementById('modal-finder').innerText = card.finder_name;
+
+            // Format Date (Assume found_at exists, fallback to _creationTime or current time)
+            const timeToUse = card.found_at || card._creationTime || Date.now();
+            document.getElementById('modal-date').innerText = formatDate(timeToUse);
+
+            // Note Logic
+            const noteContainer = document.getElementById('modal-note-container');
+            if(card.finder_note) {
+                noteContainer.style.display = 'block';
+                document.getElementById('modal-note').innerText = card.finder_note;
+            } else {
+                noteContainer.style.display = 'none';
+            }
+
+            modal.classList.add('is-active');
+        }
+
+        function closeModal() {
+            document.getElementById('image-modal').classList.remove('is-active');
+            document.getElementById('modal-img').src = "";
         }
 
         loadGallery();
