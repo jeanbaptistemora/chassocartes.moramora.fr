@@ -244,7 +244,14 @@
     </div>
 
     <script>
-        const convex_client = new convex.ConvexClient("https://vibrant-bee-793.convex.cloud");
+        if (location.hostname === "") {
+            var convex_url = "https://vibrant-bee-793.convex.cloud";
+        } else {
+            // PRODUCTION
+            var convex_url = "https://capable-civet-108.convex.cloud";
+        }
+        console.log("Use convex_url "+convex_url);
+        const convex_client = new convex.ConvexClient(convex_url);
 
         // Global store for cards to avoid passing complex strings in HTML
         let galleryData = [];
